@@ -1,38 +1,28 @@
 package ch.apptiva.watchdog;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import flowctrl.integration.slack.webapi.SlackWebApiClient;
+import com.ullink.slack.simpleslackapi.SlackSession;
+import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
 
 public class MessageDispatcher {
 
-	private SlackWebApiClient webApiClient;
 	private boolean shutdownRequested;
 	private boolean shutdownAsked;
 
-	public MessageDispatcher(SlackWebApiClient webApiClient) {
-		this.webApiClient = webApiClient;
+	public boolean shutdownRequested() {
+		return shutdownRequested;
 	}
 
-	public void dispatch(JsonNode jsonNode) {
-		String channel = jsonNode.get("channel").asText();
-		String user = jsonNode.get("user").asText();
-		String ts = jsonNode.get("ts").asText();
-		String text = jsonNode.get("text").asText();
-		webApiClient.addReactionToMessage("thumbsup", channel, ts);
-		webApiClient.postMessage(channel, "jaja...");
+	public void dispatch(SlackMessagePosted event, SlackSession session) {
+		session.addReactionToMessage(event.getChannel(), event.getTimestamp(), "robot_face");
 
-		if (text.toLowerCase().equals("shutdown")) {
-			webApiClient.postMessage(channel, "Wirklich?");
+		if (event.getMessageContent().toLowerCase().equals("shutdown")) {
 			shutdownAsked = true;
-		} else if (shutdownAsked && text.toLowerCase().equals("ja")) {
+			session.sendMessage(event.getChannel(), "Wirklich?");
+		} else if (shutdownAsked && event.getMessageContent().toLowerCase().equals("ja")) {
 			shutdownRequested = true;
+			session.sendMessage(event.getChannel(), "Tschüss...");
 		} else {
 			shutdownAsked = false;
 		}
-	}
-
-	public boolean shutdownRequested() {
-		return shutdownRequested;
 	}
 }

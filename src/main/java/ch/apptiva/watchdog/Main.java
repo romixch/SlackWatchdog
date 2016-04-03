@@ -1,34 +1,32 @@
 package ch.apptiva.watchdog;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 
-import flowctrl.integration.slack.SlackClientFactory;
-import flowctrl.integration.slack.rtm.Event;
-import flowctrl.integration.slack.rtm.EventListener;
-import flowctrl.integration.slack.rtm.SlackRealTimeMessagingClient;
-import flowctrl.integration.slack.webapi.SlackWebApiClient;
+import com.ullink.slack.simpleslackapi.SlackSession;
+import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
+import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory;
+import com.ullink.slack.simpleslackapi.listeners.SlackMessagePostedListener;
 
 public class Main {
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, IOException {
 		String token = args[0];
-		SlackWebApiClient webApiClient = SlackClientFactory.createWebApiClient(token);
-		String webSocketUrl = webApiClient.startRealTimeMessagingApi();
-		MessageDispatcher dispatcher = new MessageDispatcher(webApiClient);
+		SlackSession slackSession = SlackSessionFactory.createWebSocketSlackSession(token);
+		slackSession.connect();
+		MessageDispatcher dispatcher = new MessageDispatcher();
 
-		SlackRealTimeMessagingClient rtmClient = new SlackRealTimeMessagingClient(webSocketUrl, null, null);
-		rtmClient.connect();
-		rtmClient.addListener(Event.MESSAGE, new EventListener() {
+		slackSession.addMessagePostedListener(new SlackMessagePostedListener() {
 			@Override
-			public void handleMessage(JsonNode jsonNode) {
-				dispatcher.dispatch(jsonNode);
+			public void onEvent(SlackMessagePosted event, SlackSession session) {
+				if (!event.getSender().isBot()) {
+					dispatcher.dispatch(event, session);
+				}
 			}
 		});
 		while (true) {
 			Thread.sleep(5000);
 			if (dispatcher.shutdownRequested()) {
-				rtmClient.close();
-				webApiClient.shutdown();
+				slackSession.disconnect();
 				break;
 			}
 		}
