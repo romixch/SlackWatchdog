@@ -42,10 +42,11 @@ public class Main {
 						message = "Hurra! " + watchedURI.getUri().toString() + " ist wieder erreichbar.";
 					} else if (NOK.equals(to)) {
 						message = "Uiiii! " + watchedURI.getUri().toString()
-								+ " ist nicht erreichbar. Du schaust besser mal vorbei, bevor es Probleme gibt!";
+								+ " ist nicht erreichbar. Du schaust besser mal vorbei, bevor es Probleme gibt!\n"
+								+ "Details: " + watchedURI.getErrorCause();
 					} else {
 						message = "Der Status von " + watchedURI.getUri().toString() + " änderte von " + from + " nach "
-								+ to + ".";
+								+ to + ".\n" + "Details: " + watchedURI.getErrorCause();
 					}
 					slackSession.sendMessage(slackSession.findChannelByName(watchedURI.getChannelNameToRespond()),
 							message);

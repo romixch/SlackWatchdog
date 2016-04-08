@@ -101,7 +101,7 @@ public class MessageDispatcher {
 
 	private void tellCapabilities(SlackMessagePosted event, SlackSession session) {
 		session.sendMessage(event.getChannel(),
-				"Hi! <@" + event.getSender().getId() + "> \n" //
+				"Hi <@" + event.getSender().getId() + ">!\n" //
 						+ "Du, ich kann so einiges. Sende mir \"" + HALTE_EIN_AUGE_AUF
 						+ " http://www.apptiva.ch/index.html\" und ich informiere dich zuverlässig darüber, wenn die Site nicht mehr erreichbar ist oder das Problem wieder gelöst ist.\n"
 						+ "Mit einem \"" + BITTE_PRUEFEN + "\" checke ich alle Hosts noch einmal durch.\n" //

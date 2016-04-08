@@ -14,13 +14,17 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WatchedURI {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(WatchedURI.class);
 	private static final long POLLING_INTERVAL = 1000 * 60 * 30;
 	private URI uri;
 	private String channelNameToRespond;
 	private WatchStateEnum currentState = UNKNOWN;
+	private String errorCause = "";
 	private long lastCheckTimeMillis;
 
 	public WatchedURI(URI uri, String channelNameToRespond) {
@@ -59,8 +63,12 @@ public class WatchedURI {
 				public String handleResponse(HttpResponse response) throws ClientProtocolException, IOException {
 					int status = response.getStatusLine().getStatusCode();
 					if (status >= 200 && status < 300) {
+						errorCause = "";
 						reportState(listener, OK);
 					} else {
+						errorCause = "Der Server antwortet mit dem Status-Code " + status + ".";
+						LOGGER.info("Error while checking URL " + WatchedURI.this.uri.toString()
+								+ ". Response Status was " + status + ".");
 						reportState(listener, NOK);
 					}
 					return null;
@@ -69,6 +77,9 @@ public class WatchedURI {
 			};
 			httpclient.execute(httpGet, responseHandler);
 		} catch (Exception e) {
+			errorCause = "Der Server antwortet nicht. Folgender Fehler ist aufgetreten: " + e.getMessage()
+					+ ". Mehr Informationen findest du im Bot Log";
+			LOGGER.info("Error while checking URL " + this.uri.toString(), e);
 			reportState(listener, NOK);
 		}
 	}
@@ -82,5 +93,9 @@ public class WatchedURI {
 
 	public void resetTimer() {
 		lastCheckTimeMillis = 0;
+	}
+
+	public String getErrorCause() {
+		return errorCause;
 	}
 }
