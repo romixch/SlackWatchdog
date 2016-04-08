@@ -1,70 +1,111 @@
 package ch.apptiva.watchdog;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.slf4j.LoggerFactory;
 
+import com.ullink.slack.simpleslackapi.SlackMessageHandle;
 import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
+import com.ullink.slack.simpleslackapi.replies.SlackMessageReply;
 
 public class MessageDispatcher {
 
-	private static final String HALTE_EIN_AUGE_AUF = "halte ein auge auf ";
+	private static final String HALTE_EIN_AUGE_AUF = "halte ein auge auf";
+	private static final CharSequence BITTE_PRUEFEN = "bitte prüfen";
 	private boolean shutdownRequested;
 	private boolean shutdownAsked;
+	private boolean foundInstruction;
 
-	private List<URL> urlsToWatch = new ArrayList<>();
+	private Watcher watcher;
 
-	public MessageDispatcher() {
-		ExecutorService executor = Executors.newSingleThreadExecutor();
+	public MessageDispatcher(Watcher watcher) {
+		this.watcher = watcher;
 	}
 
 	public boolean shutdownRequested() {
 		return shutdownRequested;
 	}
 
-	public List<URL> getUrlsToWatch() {
-		return urlsToWatch;
+	public void dispatch(SlackMessagePosted event, SlackSession session) {
+		if (someoneIsTalkingToMe(event, session)) {
+			addRobotFace(event, session);
+			foundInstruction = false;
+			watchOutForNewWatches(event, session);
+			watchOutForTimerReset(event, session);
+			watchOutForShutdown(event, session);
+			if (!foundInstruction) {
+				tellCapabilities(event, session);
+			}
+		}
 	}
 
-	public void dispatch(SlackMessagePosted event, SlackSession session) {
-		session.addReactionToMessage(event.getChannel(), event.getTimestamp(), "robot_face");
+	private SlackMessageHandle<SlackMessageReply> addRobotFace(SlackMessagePosted event, SlackSession session) {
+		return session.addReactionToMessage(event.getChannel(), event.getTimestamp(), "robot_face");
+	}
 
-		watchOutForShutdown(event, session);
-
-		watchOutForNewWatches(event, session);
-
+	private boolean someoneIsTalkingToMe(SlackMessagePosted event, SlackSession session) {
+		boolean isDirect = event.getChannel().isDirect();
+		boolean meInMessage = event.getMessageContent().contains("<@" + session.sessionPersona().getId() + '>');
+		return isDirect || meInMessage;
 	}
 
 	private void watchOutForNewWatches(SlackMessagePosted event, SlackSession session) {
-		String message = event.getMessageContent();
-		if (message.toLowerCase().startsWith(HALTE_EIN_AUGE_AUF)) {
-			String url = message.substring(HALTE_EIN_AUGE_AUF.length(), message.length());
+		String message = sanitizeMessage(event, session);
+		if (message.contains(HALTE_EIN_AUGE_AUF)) {
+			foundInstruction = true;
+			String url = message
+					.substring(message.indexOf(HALTE_EIN_AUGE_AUF) + HALTE_EIN_AUGE_AUF.length(), message.length())
+					.trim();
 			url = url.replace("<", "").replace(">", "");
 			try {
-				urlsToWatch.add(new URL(url));
-			} catch (MalformedURLException e) {
-				LoggerFactory.getLogger(this.getClass()).warn("Bad URL", e);
-				session.sendMessage(event.getChannel(), "Offenbar ist die URL nicht gültig: " + url);
+				WatchedURI watchedURI = new WatchedURI(new URI(url), event.getChannel().getName());
+				watcher.addWatchedURI(watchedURI);
+			} catch (URISyntaxException e) {
+				LoggerFactory.getLogger(this.getClass()).warn("Bad URI", e);
+				session.sendMessage(event.getChannel(), "Offenbar ist die URI nicht gültig: " + url);
 			}
 			session.sendMessage(event.getChannel(), "OK. Werde ich tun.");
 		}
 	}
 
+	private void watchOutForTimerReset(SlackMessagePosted event, SlackSession session) {
+		String message = sanitizeMessage(event, session);
+		if (message.contains(BITTE_PRUEFEN)) {
+			foundInstruction = true;
+			session.sendMessage(event.getChannel(), "Wird gemacht...");
+			watcher.resetTimers();
+		}
+	}
+
 	private void watchOutForShutdown(SlackMessagePosted event, SlackSession session) {
-		if (event.getMessageContent().toLowerCase().equals("shutdown")) {
+		String message = sanitizeMessage(event, session).replace(":", "").trim();
+		if (message.equals("shutdown")) {
 			shutdownAsked = true;
+			foundInstruction = true;
 			session.sendMessage(event.getChannel(), "Wirklich?");
-		} else if (shutdownAsked && event.getMessageContent().toLowerCase().equals("ja")) {
-			shutdownRequested = true;
+		} else if (shutdownAsked && message.equals("ja")) {
+			foundInstruction = true;
 			session.sendMessage(event.getChannel(), "Tschüss...");
+			shutdownRequested = true;
 		} else {
 			shutdownAsked = false;
 		}
+	}
+
+	private String sanitizeMessage(SlackMessagePosted event, SlackSession session) {
+		String me = "<@" + session.sessionPersona().getId() + ">";
+		return event.getMessageContent().replace(me, "").trim().toLowerCase();
+	}
+
+	private void tellCapabilities(SlackMessagePosted event, SlackSession session) {
+		session.sendMessage(event.getChannel(),
+				"Hi! <@" + event.getSender().getId() + "> \n" //
+						+ "Du, ich kann so einiges. Sende mir \"" + HALTE_EIN_AUGE_AUF
+						+ " http://www.apptiva.ch/index.html\" und ich informiere dich zuverlässig darüber, wenn die Site nicht mehr erreichbar ist oder das Problem wieder gelöst ist.\n"
+						+ "Mit einem \"" + BITTE_PRUEFEN + "\" checke ich alle Hosts noch einmal durch.\n" //
+						+ "Du kannst mich auch mit \"shutdown\" stoppen.\n" //
+						+ "Vergiss nicht, mich immer direkt anzusprechen.");
 	}
 }

@@ -1,45 +1,37 @@
 package ch.apptiva.watchdog;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-
-import com.ullink.slack.simpleslackapi.SlackSession;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 public class Watcher {
 
-	private SlackSession slackSession;
+	private Set<WatchedURI> watchedURIs = new HashSet<>();
 
-	public Watcher(SlackSession slackSession) {
-		this.slackSession = slackSession;
+	public void watch(WatchEventListener listener) {
+		for (WatchedURI watchedURI : watchedURIs) {
+			watchedURI.performWatch(listener);
+		}
 	}
 
-	public void watch(URL url) throws URISyntaxException, IOException {
-		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
-			HttpGet httpGet = new HttpGet(url.toURI());
-			ResponseHandler<String> responseHandler = new ResponseHandler<String>() {
-				@Override
-				public String handleResponse(HttpResponse response) throws ClientProtocolException, IOException {
-					int status = response.getStatusLine().getStatusCode();
-					if (status >= 200 && status < 300) {
-						slackSession.sendMessageToUser("romix", url + " ist prima erreichbar.", null);
-					} else {
-						slackSession.sendMessageToUser("romix", "mit " + url + " stimmt etwas nicht.", null);
-					}
-					return null;
-				}
-			};
-			httpclient.execute(httpGet, responseHandler);
-		} catch (Exception e) {
-			slackSession.sendMessageToUser("romix", "mit " + url + " stimmt etwas nicht", null);
-		}
+	public void addWatchedURI(WatchedURI watchedURI) {
+		watchedURIs.add(watchedURI);
+	}
 
+	public void removeWatchedURI(WatchedURI watchedURI) {
+		Iterator<WatchedURI> it = watchedURIs.iterator();
+		while (it.hasNext()) {
+			WatchedURI uri = it.next();
+			if (uri.getUri().equals(watchedURI.getUri())) {
+				it.remove();
+				break;
+			}
+		}
+	}
+
+	public void resetTimers() {
+		for (WatchedURI watchedURI : watchedURIs) {
+			watchedURI.resetTimer();
+		}
 	}
 }
