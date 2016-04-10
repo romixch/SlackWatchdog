@@ -7,6 +7,7 @@ import static ch.apptiva.watchdog.WatchStateEnum.UNKNOWN;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
+import com.ullink.slack.simpleslackapi.SlackChannel;
 import com.ullink.slack.simpleslackapi.SlackSession;
 import com.ullink.slack.simpleslackapi.events.SlackMessagePosted;
 import com.ullink.slack.simpleslackapi.impl.SlackSessionFactory;
@@ -20,6 +21,7 @@ public class Main {
     SlackSession slackSession = SlackSessionFactory.createWebSocketSlackSession(token);
     slackSession.connect();
     Watcher watcher = new Watcher();
+    watcher.load();
     MessageDispatcher dispatcher = new MessageDispatcher(watcher);
 
     slackSession.addMessagePostedListener(new SlackMessagePostedListener() {

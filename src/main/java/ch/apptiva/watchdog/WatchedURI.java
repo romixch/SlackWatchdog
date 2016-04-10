@@ -5,6 +5,7 @@ import static ch.apptiva.watchdog.WatchStateEnum.OK;
 import static ch.apptiva.watchdog.WatchStateEnum.UNKNOWN;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URI;
 
 import org.apache.http.HttpResponse;
@@ -17,7 +18,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WatchedURI {
+public class WatchedURI implements Serializable {
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(WatchedURI.class);
   private static final long POLLING_INTERVAL = 1000 * 60 * 30;

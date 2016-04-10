@@ -8,16 +8,24 @@ import java.util.Set;
 
 public class Watcher {
 
+  private WatcherRepository repo = new WatcherRepository();
   private Set<WatchedURI> watchedURIs = new HashSet<>();
 
   public void watch(WatchEventListener listener) {
     for (WatchedURI watchedURI : watchedURIs) {
-      watchedURI.performWatch(listener);
+      watchedURI.performWatch(new WatchEventListener() {
+        @Override
+        public void stateChanged(WatchStateEnum from, WatchStateEnum to, WatchedURI watchedURI) {
+          persist();
+          listener.stateChanged(from, to, watchedURI);
+        }
+      });
     }
   }
 
   public void addWatchedURI(WatchedURI watchedURI) {
     watchedURIs.add(watchedURI);
+    persist();
   }
 
   public boolean removeWatchedURI(WatchedURI watchedURI) {
@@ -26,6 +34,7 @@ public class Watcher {
       WatchedURI uri = it.next();
       if (uri.getUri().equals(watchedURI.getUri())) {
         it.remove();
+        persist();
         return true;
       }
     }
@@ -36,6 +45,7 @@ public class Watcher {
     for (WatchedURI watchedURI : watchedURIs) {
       watchedURI.resetTimer();
     }
+    persist();
   }
 
   public boolean isIdle() {
@@ -44,5 +54,13 @@ public class Watcher {
 
   public Collection<WatchedURI> getAllWatchedURIs() {
     return Collections.unmodifiableCollection(watchedURIs);
+  }
+
+  private void persist() {
+    repo.persist(watchedURIs);
+  }
+
+  public void load() {
+    watchedURIs = new HashSet<>(repo.load());
   }
 }
