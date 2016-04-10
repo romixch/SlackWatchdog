@@ -101,4 +101,17 @@ public class WatchedURI implements Serializable {
   public String getErrorCause() {
     return errorCause;
   }
+
+  @Override
+  public int hashCode() {
+    return uri.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof WatchedURI) {
+      return uri.equals(WatchedURI.class.cast(obj).uri);
+    }
+    return false;
+  }
 }
