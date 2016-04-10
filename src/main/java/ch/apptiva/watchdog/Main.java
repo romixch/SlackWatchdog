@@ -32,7 +32,7 @@ public class Main {
     });
 
     while (true) {
-      Thread.sleep(5000);
+      Thread.sleep(60 * 1000);
       watcher.watch(new WatchEventListener() {
         @Override
         public void stateChanged(WatchStateEnum from, WatchStateEnum to, WatchedURI watchedURI) {
