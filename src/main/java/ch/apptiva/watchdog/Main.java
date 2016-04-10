@@ -49,8 +49,11 @@ public class Main {
             message = "Der Status von " + watchedURI.getUri().toString() + " änderte von " + from
                 + " nach " + to + ".\n" + "Details: " + watchedURI.getErrorCause();
           }
-          slackSession.sendMessage(
-              slackSession.findChannelByName(watchedURI.getChannelNameToRespond()), message);
+          SlackChannel channel = slackSession.findChannelByName(watchedURI.getChannelRespond());
+          if (channel == null) {
+            channel = slackSession.findChannelById(watchedURI.getChannelRespond());
+          }
+          slackSession.sendMessage(channel, message);
         }
       });
       if (dispatcher.shutdownRequested()) {

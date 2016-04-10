@@ -22,22 +22,22 @@ public class WatchedURI {
   private static final Logger LOGGER = LoggerFactory.getLogger(WatchedURI.class);
   private static final long POLLING_INTERVAL = 1000 * 60 * 30;
   private URI uri;
-  private String channelNameToRespond;
+  private String channelToRespond;
   private WatchStateEnum currentState = UNKNOWN;
   private String errorCause = "";
   private long lastCheckTimeMillis;
 
-  public WatchedURI(URI uri, String channelNameToRespond) {
+  public WatchedURI(URI uri, String channelToRespond) {
     this.uri = uri;
-    this.channelNameToRespond = channelNameToRespond;
+    this.channelToRespond = channelToRespond;
   }
 
   public URI getUri() {
     return uri;
   }
 
-  public String getChannelNameToRespond() {
-    return channelNameToRespond;
+  public String getChannelRespond() {
+    return channelToRespond;
   }
 
   public WatchStateEnum getCurrentState() {
