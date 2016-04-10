@@ -22,6 +22,7 @@ public class WatcherRepository {
       }
       try (FileOutputStream fos = new FileOutputStream(store)) {
         try (ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+          oos.writeInt(watchedURIs.size());
           for (WatchedURI watchedURI : watchedURIs) {
             oos.writeObject(watchedURI);
           }
@@ -46,8 +47,10 @@ public class WatcherRepository {
       if (store.exists()) {
         try (FileInputStream fis = new FileInputStream(store)) {
           try (ObjectInputStream ois = new ObjectInputStream(fis)) {
+            int size = ois.readInt();
             Object o;
-            while ((o = ois.readObject()) != null) {
+            for (int s = 0; s < size; s++) {
+              o = ois.readObject();
               if (o instanceof WatchedURI) {
                 uris.add((WatchedURI) o);
               }
