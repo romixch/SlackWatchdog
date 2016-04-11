@@ -83,8 +83,8 @@ public class MessageDispatcher {
       if (watcher.isIdle()) {
         session.sendMessage(event.getChannel(), "Gerade nichts...");
       } else {
+        session.sendMessage(event.getChannel(), "Ich halte ein Auge auf die folgenden URIs:");
         for (WatchedURI watchedURI : watcher.getAllWatchedURIs()) {
-          session.sendMessage(event.getChannel(), "Ich halte ein Auge auf die folgenden URIs:");
           session.sendMessage(event.getChannel(), watchedURI.getUri().toString());
         }
       }
