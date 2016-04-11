@@ -35,7 +35,8 @@ public class WatcherRepository {
 
   private File getStore() throws URISyntaxException {
     File path =
-        new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+        new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath())
+            .getParentFile();
     File store = new File(path, "watchedURIs.bin");
     return store;
   }
