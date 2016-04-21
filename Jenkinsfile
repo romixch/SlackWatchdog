@@ -15,4 +15,5 @@ node {
 
    stage 'Testing'
    sh './gradlew test'
+   step $class: 'JUnitResultArchiver', testResults: 'build/test-results/TEST-*.xml'
 }
