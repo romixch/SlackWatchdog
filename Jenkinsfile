@@ -8,5 +8,11 @@ node {
    // Mark the code build 'stage'....
    stage 'Build'
    // Run the gradle build
-   sh "./gradlew clean jar shadowJar"
+   sh './gradlew jar'
+
+   stage 'Create Fat Jar'
+   sh './gradle shadowJar'
+
+   stage 'Testing'
+   sh './gradlew test'
 }
