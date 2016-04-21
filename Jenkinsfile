@@ -11,7 +11,7 @@ node {
    sh './gradlew jar'
 
    stage 'Create Fat Jar'
-   sh './gradle shadowJar'
+   sh './gradlew shadowJar'
 
    stage 'Testing'
    sh './gradlew test'
