@@ -10,10 +10,13 @@ node {
    // Run the gradle build
    sh './gradlew jar'
 
+   stage 'Unit tests'
+   sh './gradlew test'
+   step $class: 'JUnitResultArchiver', testResults: 'build/test-results/TEST-*.xml'
+
    stage 'Create Fat Jar'
    sh './gradlew shadowJar'
 
-   stage 'Testing'
-   sh './gradlew test'
-   step $class: 'JUnitResultArchiver', testResults: 'build/test-results/TEST-*.xml'
+   stage 'Integration tests'
+   sh 'docker ps -a'
 }
