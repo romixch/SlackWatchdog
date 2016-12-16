@@ -40,3 +40,6 @@ test {
 task wrapper(type: Wrapper) {
     gradleVersion = '2.8'
 }
+
+task stage(dependsOn: ['shadowJar', 'clean'])
+build.mustRunAfter clean
