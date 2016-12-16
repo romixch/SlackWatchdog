@@ -1,1 +1,1 @@
-web: java -cp "build/libs/*" ch.apptiva.watchdog.Main
+worker: java -cp "build/libs/*" ch.apptiva.watchdog.Main
