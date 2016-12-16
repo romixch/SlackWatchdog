@@ -1,8 +1,9 @@
 package ch.apptiva.watchdog;
 
-import static ch.apptiva.watchdog.WatchStateEnum.NOK;
-import static ch.apptiva.watchdog.WatchStateEnum.OK;
 import static ch.apptiva.watchdog.WatchStateEnum.UNKNOWN;
+import static ch.apptiva.watchdog.WatchStateEnum.HEALTHY;
+import static ch.apptiva.watchdog.WatchStateEnum.UNWELL;
+import static ch.apptiva.watchdog.WatchStateEnum.SICK;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -22,12 +23,13 @@ public class WatchedURI implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WatchedURI.class);
-    private static final long POLLING_INTERVAL = 1000 * 60 * 30;
+    private static final int UNWELL_TO_SICK_TREASHHOLD = 3;
     private URI uri;
     private String channelToRespond;
     private WatchStateEnum currentState = UNKNOWN;
     private String errorCause = "";
     private long lastCheckTimeMillis;
+    private int unwellCount; // how many times was this url reported unwell
 
     public WatchedURI(URI uri, String channelToRespond) {
         this.uri = uri;
@@ -48,7 +50,7 @@ public class WatchedURI implements Serializable {
 
     public void performWatch(WatchEventListener listener) {
         long currentTimeMillis = System.currentTimeMillis();
-        if (currentTimeMillis - lastCheckTimeMillis < POLLING_INTERVAL) {
+        if (currentTimeMillis - lastCheckTimeMillis < currentState.getPollingIntervalInMillis()) {
             return;
         }
         lastCheckTimeMillis = currentTimeMillis;
@@ -67,12 +69,12 @@ public class WatchedURI implements Serializable {
                     int status = response.getStatusLine().getStatusCode();
                     if (status >= 200 && status < 300) {
                         errorCause = "";
-                        reportState(listener, OK);
+                        reportHealthy(listener);
                     } else {
                         errorCause = "Der Server antwortet mit dem Status-Code " + status + ".";
                         LOGGER.info("Error while checking URL " + WatchedURI.this.uri.toString()
                                 + ". Response Status was " + status + ".");
-                        reportState(listener, NOK);
+                        reportUnwell(listener);
                     }
                     return null;
                 }
@@ -83,8 +85,22 @@ public class WatchedURI implements Serializable {
             errorCause = "Der Server antwortet nicht. Folgender Fehler ist aufgetreten: " + e.getMessage()
                     + ". Mehr Informationen findest du im Bot Log";
             LOGGER.info("Error while checking URL " + this.uri.toString(), e);
-            reportState(listener, NOK);
+            reportUnwell(listener);
         }
+    }
+
+    private void reportUnwell(WatchEventListener listener) {
+        if (unwellCount < UNWELL_TO_SICK_TREASHHOLD) {
+            unwellCount++;
+            reportState(listener, UNWELL);
+        } else {
+            reportState(listener, SICK);
+        }
+    }
+
+    private void reportHealthy(WatchEventListener listener) {
+        unwellCount = 0;
+        reportState(listener, HEALTHY);
     }
 
     private void reportState(WatchEventListener listener, WatchStateEnum newState) {

@@ -1,8 +1,9 @@
 package ch.apptiva.watchdog;
 
-import static ch.apptiva.watchdog.WatchStateEnum.NOK;
-import static ch.apptiva.watchdog.WatchStateEnum.OK;
+import static ch.apptiva.watchdog.WatchStateEnum.HEALTHY;
+import static ch.apptiva.watchdog.WatchStateEnum.SICK;
 import static ch.apptiva.watchdog.WatchStateEnum.UNKNOWN;
+import static ch.apptiva.watchdog.WatchStateEnum.UNWELL;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -38,12 +39,16 @@ public class Main {
             watcher.watch(new WatchEventListener() {
                 @Override
                 public void stateChanged(WatchStateEnum from, WatchStateEnum to, WatchedURI watchedURI) {
+                    if (to.equals(UNWELL)) {
+                        // We don't report unwell state
+                        return;
+                    }
                     String message;
-                    if (OK.equals(to) && UNKNOWN.equals(from)) {
+                    if (from.equals(UNKNOWN) && to.equals(HEALTHY)) {
                         message = watchedURI.getUri().toString() + " ist erreichbar und antwortet.";
-                    } else if (OK.equals(to) && NOK.equals(from)) {
+                    } else if (from.equals(SICK) && to.equals(HEALTHY)) {
                         message = "Hurra! " + watchedURI.getUri().toString() + " ist wieder erreichbar.";
-                    } else if (NOK.equals(to)) {
+                    } else if (SICK.equals(to)) {
                         message = "Uiiii! " + watchedURI.getUri().toString()
                                 + " ist nicht erreichbar. Du schaust besser mal vorbei, bevor es Probleme gibt!\n"
                                 + "Details: " + watchedURI.getErrorCause();

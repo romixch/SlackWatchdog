@@ -72,7 +72,7 @@ public class MessageDispatcher {
                 LoggerFactory.getLogger(this.getClass()).warn("Bad URI", e);
                 session.sendMessage(event.getChannel(), "Offenbar ist die URI nicht gültig: " + url);
             }
-            session.sendMessage(event.getChannel(), "OK. Werde ich tun.");
+            session.sendMessage(event.getChannel(), "HEALTHY. Werde ich tun.");
         }
     }
 
@@ -102,7 +102,7 @@ public class MessageDispatcher {
             try {
                 watchedURI = new WatchedURI(new URI(url), event.getChannel().getName());
                 if (watcher.removeWatchedURI(watchedURI)) {
-                    session.sendMessage(event.getChannel(), "OK. Ist vergessen.");
+                    session.sendMessage(event.getChannel(), "HEALTHY. Ist vergessen.");
                 } else {
                     session.sendMessage(event.getChannel(), "Sorry, ich konnte " + url + " nicht finden.");
                 }
