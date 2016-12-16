@@ -13,7 +13,7 @@ import com.ullink.slack.simpleslackapi.replies.SlackMessageReply;
 public class MessageDispatcher {
 
     private static final String HALTE_EIN_AUGE_AUF = "halte ein auge auf";
-    private static final String BITTE_PRUEFEN = "bitte prüfen";
+    private static final String[] BITTE_PRUEFEN = {"prüfen", "status"};
     private static final String WAS_MACHST_DU = "was machst du";
     private static final String VERGISS = "vergiss";
     private boolean shutdownRequested;
@@ -37,7 +37,7 @@ public class MessageDispatcher {
             watchOutForNewWatches(event, session);
             watchOutForWatchListing(event, session);
             watchOutForForgettingListing(event, session);
-            watchOutForTimerReset(event, session);
+            watchOutForRecheck(event, session);
             watchOutForShutdown(event, session);
             if (!foundInstruction) {
                 tellCapabilities(event, session);
@@ -72,7 +72,7 @@ public class MessageDispatcher {
                 LoggerFactory.getLogger(this.getClass()).warn("Bad URI", e);
                 session.sendMessage(event.getChannel(), "Offenbar ist die URI nicht gültig: " + url);
             }
-            session.sendMessage(event.getChannel(), "HEALTHY. Werde ich tun.");
+            session.sendMessage(event.getChannel(), "OK. Werde ich tun.");
         }
     }
 
@@ -113,11 +113,11 @@ public class MessageDispatcher {
         }
     }
 
-    private void watchOutForTimerReset(SlackMessagePosted event, SlackSession session) {
+    private void watchOutForRecheck(SlackMessagePosted event, SlackSession session) {
         String message = sanitizeMessage(event, session);
-        if (message.contains(BITTE_PRUEFEN)) {
+        if (message.contains(BITTE_PRUEFEN[0]) || message.contains(BITTE_PRUEFEN[1])) {
             foundInstruction = true;
-            session.sendMessage(event.getChannel(), "Wird gemacht...");
+            session.sendMessage(event.getChannel(), "Gut, ich überprüfe noch einmal alle Seiten...");
             watcher.resetTimers();
         }
     }
@@ -146,7 +146,7 @@ public class MessageDispatcher {
         session.sendMessage(event.getChannel(), "Hi <@" + event.getSender().getId() + ">!\n" //
                 + "Du, ich kann so einiges. Sende mir \"" + HALTE_EIN_AUGE_AUF
                 + " http://www.apptiva.ch/index.html\" und ich informiere dich zuverlässig darüber, wenn die Site nicht mehr erreichbar ist oder das Problem wieder gelöst ist.\n"
-                + "Mit einem \"" + BITTE_PRUEFEN + "\" checke ich alle Hosts noch einmal durch.\n" //
+                + "Mit einem \"prüfen\" oder \"status\" checke ich alle Hosts noch einmal durch.\n" //
                 + "Ich kann auch URLs wieder vergessen (vergiss <url>) oder dir sagen, welche URLs ich überwache (was machst du?).\n" //
                 + "Du kannst mich auch mit \"shutdown\" stoppen.\n" //
                 + "Vergiss nicht, mich immer direkt anzusprechen.");

@@ -110,8 +110,9 @@ public class WatchedURI implements Serializable {
         }
     }
 
-    public void resetTimer() {
+    public void resetStateAndRecheck() {
         lastCheckTimeMillis = 0;
+        currentState = UNKNOWN;
     }
 
     public String getErrorCause() {

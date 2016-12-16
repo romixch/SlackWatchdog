@@ -43,7 +43,7 @@ public class Watcher {
 
     public void resetTimers() {
         for (WatchedURI watchedURI : watchedURIs) {
-            watchedURI.resetTimer();
+            watchedURI.resetStateAndRecheck();
         }
         persist();
     }

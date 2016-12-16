@@ -39,28 +39,25 @@ public class Main {
             watcher.watch(new WatchEventListener() {
                 @Override
                 public void stateChanged(WatchStateEnum from, WatchStateEnum to, WatchedURI watchedURI) {
-                    if (to.equals(UNWELL)) {
-                        // We don't report unwell state
-                        return;
-                    }
-                    String message;
+                    String message = null;
                     if (from.equals(UNKNOWN) && to.equals(HEALTHY)) {
                         message = watchedURI.getUri().toString() + " ist erreichbar und antwortet.";
+                    } else if (from.equals(UNKNOWN) && to.equals(UNWELL)) {
+                        message = watchedURI.getUri().toString() + " ist gerade nicht erreichbar. Ich melde mich noch einmal wenn das weiter so bleibt.";
                     } else if (from.equals(SICK) && to.equals(HEALTHY)) {
                         message = "Hurra! " + watchedURI.getUri().toString() + " ist wieder erreichbar.";
                     } else if (SICK.equals(to)) {
                         message = "Uiiii! " + watchedURI.getUri().toString()
                                 + " ist nicht erreichbar. Du schaust besser mal vorbei, bevor es Probleme gibt!\n"
                                 + "Details: " + watchedURI.getErrorCause();
-                    } else {
-                        message = "Der Status von " + watchedURI.getUri().toString() + " änderte von " + from
-                                + " nach " + to + ".\n" + "Details: " + watchedURI.getErrorCause();
                     }
-                    SlackChannel channel = slackSession.findChannelByName(watchedURI.getChannelRespond());
-                    if (channel == null) {
-                        channel = slackSession.findChannelById(watchedURI.getChannelRespond());
+                    if (message != null) {
+                        SlackChannel channel = slackSession.findChannelByName(watchedURI.getChannelRespond());
+                        if (channel == null) {
+                            channel = slackSession.findChannelById(watchedURI.getChannelRespond());
+                        }
+                        slackSession.sendMessage(channel, message);
                     }
-                    slackSession.sendMessage(channel, message);
                 }
             });
             if (dispatcher.shutdownRequested()) {
