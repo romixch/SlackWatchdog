@@ -41,5 +41,8 @@ task wrapper(type: Wrapper) {
     gradleVersion = '2.8'
 }
 
-task stage(dependsOn: ['shadowJar', 'clean'])
+task stage(dependsOn: ['shadowJar', 'clean'], type: Exec) {
+    executable "ls"
+    args "./build/libs"
+}
 build.mustRunAfter clean

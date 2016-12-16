@@ -1,1 +1,1 @@
-web: java -jar ./build/libs/SlackWatchdog-0.9-all.jar
+web: java -jar build/libs/SlackWatchdog-0.9-all.jar
