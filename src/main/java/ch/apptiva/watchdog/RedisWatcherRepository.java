@@ -24,7 +24,7 @@ public class RedisWatcherRepository implements WatcherRepository {
         watchedURIs.forEach(watchedUri -> {
             String persistentString = watchedUri.toPersistentString();
             String resp = jedis.set(watchedUri.getKey(), persistentString);
-            System.out.println(resp);
+            System.out.println("Persisted URI with following response: " + resp);
         });
     }
 
