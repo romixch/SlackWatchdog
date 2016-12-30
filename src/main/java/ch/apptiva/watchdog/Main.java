@@ -52,9 +52,9 @@ public class Main {
                                 + "Details: " + watchedURI.getErrorCause();
                     }
                     if (message != null) {
-                        SlackChannel channel = slackSession.findChannelByName(watchedURI.getChannelRespond());
+                        SlackChannel channel = slackSession.findChannelByName(watchedURI.getChannelToRespond());
                         if (channel == null) {
-                            channel = slackSession.findChannelById(watchedURI.getChannelRespond());
+                            channel = slackSession.findChannelById(watchedURI.getChannelToRespond());
                         }
                         slackSession.sendMessage(channel, message);
                     }

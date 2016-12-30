@@ -8,6 +8,7 @@ import static ch.apptiva.watchdog.WatchStateEnum.SICK;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
+import java.nio.charset.Charset;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -16,11 +17,13 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class WatchedURI implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WatchedURI.class);
     private static final int UNWELL_TO_SICK_TREASHHOLD = 3;
@@ -30,6 +33,11 @@ public class WatchedURI implements Serializable {
     private String errorCause = "";
     private long lastCheckTimeMillis;
     private int unwellCount; // how many times was this url reported unwell
+    public static final Charset UTF_8 = Charset.forName("UTF-8");
+
+    public WatchedURI() {
+        // for jackson json deserialization
+    }
 
     public WatchedURI(URI uri, String channelToRespond) {
         this.uri = uri;
@@ -40,12 +48,28 @@ public class WatchedURI implements Serializable {
         return uri;
     }
 
-    public String getChannelRespond() {
+    public String getChannelToRespond() {
         return channelToRespond;
+    }
+
+    public void setChannelToRespond(String channelToRespond) {
+        if (channelToRespond == null) {
+            throw new IllegalStateException("You can't change the channel to respond if it is already set.");
+        }
+        this.channelToRespond = channelToRespond;
     }
 
     public WatchStateEnum getCurrentState() {
         return currentState;
+    }
+
+    void setCurrentState(WatchStateEnum currentState) {
+        this.currentState = currentState;
+    }
+
+    @JsonIgnore
+    public String getKey() {
+        return getChannelToRespond() + ";" + getUri().toString();
     }
 
     public void performWatch(WatchEventListener listener) {
@@ -86,6 +110,14 @@ public class WatchedURI implements Serializable {
                     + ". Mehr Informationen findest du im Bot Log";
             LOGGER.info("Error while checking URL " + this.uri.toString(), e);
             reportUnwell(listener);
+        }
+    }
+
+    public String toPersistentString() {
+        try {
+            return MAPPER.writeValueAsString(this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -130,5 +162,13 @@ public class WatchedURI implements Serializable {
             return uri.equals(WatchedURI.class.cast(obj).uri);
         }
         return false;
+    }
+
+    public static WatchedURI fromPersistentString(String string) {
+        try {
+            return MAPPER.readValue(string, WatchedURI.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

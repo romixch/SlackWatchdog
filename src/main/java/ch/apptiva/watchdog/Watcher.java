@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class Watcher {
 
-    private WatcherRepository repo = new WatcherRepository();
+    private WatcherRepository repo = WatcherRepositoryFactory.create();
     private Set<WatchedURI> watchedURIs = new HashSet<>();
 
     public void watch(WatchEventListener listener) {
